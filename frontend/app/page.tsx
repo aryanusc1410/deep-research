@@ -22,6 +22,7 @@ export default function Page() {
   const [progress, setProgress] = useState<number>(0);
   const [inputValue, setInputValue] = useState("");
   const [researchMode, setResearchMode] = useState(true);
+  const [showConfig, setShowConfig] = useState(false);
   
   // Config state
   const [provider, setProvider] = useState("openai");
@@ -192,6 +193,13 @@ export default function Page() {
       setMessages(prev => [...prev, errorMsg]);
     } finally {
       setBusy(false);
+      // Reset progress after a short delay when done
+      setTimeout(() => {
+        if (!busy) {
+          setProgress(0);
+          setPhase("");
+        }
+      }, 2000);
     }
   }
 
@@ -207,25 +215,6 @@ export default function Page() {
     <main>
       <h1>Deep Research</h1>
 
-      {/* Status Bar */}
-      {busy && researchMode && (
-        <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <div className="kv" style={{ marginBottom: '0.75rem' }}>
-            <span>Status</span>
-            <span className={`badge ${phase}`}>{phase || "idle"}</span>
-          </div>
-          <div style={{ height: 10, background: "#e5e7eb", borderRadius: 999 }}>
-            <div style={{
-              height: "100%",
-              width: `${progress}%`,
-              background: "linear-gradient(90deg, #6366f1, #8b5cf6)",
-              borderRadius: 999,
-              transition: "width .3s ease"
-            }} />
-          </div>
-        </div>
-      )}
-
       {/* Chat Messages */}
       <div style={{ marginBottom: '1.5rem' }}>
         {messages.map((msg, idx) => (
@@ -236,7 +225,7 @@ export default function Page() {
             alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start'
           }}>
             {msg.role === 'user' ? (
-              <div>
+              <div style={{ width: '100%', maxWidth: '100%' }}>
                 <div style={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   color: 'white',
@@ -246,7 +235,9 @@ export default function Page() {
                   fontSize: '1rem',
                   lineHeight: 1.6,
                   boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-                  marginLeft: 'auto'
+                  marginLeft: 'auto',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word'
                 }}>
                   {msg.content}
                 </div>
@@ -281,10 +272,11 @@ export default function Page() {
                         gap: '0.5rem',
                         fontSize: '0.9rem',
                         fontWeight: '600',
-                        color: msg.report.winning_tool === 'SerpAPI' ? '#92400e' : '#1e40af'
+                        color: msg.report.winning_tool === 'SerpAPI' ? '#92400e' : '#1e40af',
+                        flexWrap: 'wrap'
                       }}>
                         <span style={{fontSize: '1.25rem'}}>🏆</span>
-                        Winner: {msg.report.winning_tool} provided the best results
+                        <span>Winner: {msg.report.winning_tool} provided the best results</span>
                       </div>
                     )}
                     <Report report={msg.report} />
@@ -292,7 +284,9 @@ export default function Page() {
                 ) : (
                   <div className="card" style={{
                     background: '#f9fafb',
-                    borderColor: '#e5e7eb'
+                    borderColor: '#e5e7eb',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word'
                   }}>
                     {msg.content}
                   </div>
@@ -303,7 +297,7 @@ export default function Page() {
         ))}
       </div>
 
-      {/* Input Box with Configuration & Research Toggle */}
+      {/* Input Box with Configuration, Research Toggle & Progress Bar */}
       <div className="card" style={{
         position: 'sticky',
         bottom: '1rem',
@@ -312,18 +306,60 @@ export default function Page() {
         boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.15)',
         padding: '1.5rem'
       }}>
-        {/* Configuration Row */}
-        <details open style={{ marginBottom: '1rem' }}>
+        {/* Progress Bar - Only shows when research is active */}
+        {busy && researchMode && (
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: '0.5rem'
+            }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#6b7280' }}>
+                Research Progress
+              </span>
+              <span className={`badge ${phase}`} style={{ animation: 'none' }}>
+                {phase || "starting"}
+              </span>
+            </div>
+            <div style={{ 
+              height: 8, 
+              background: "#e5e7eb", 
+              borderRadius: 999,
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                height: "100%",
+                width: `${progress}%`,
+                background: "linear-gradient(90deg, #6366f1, #8b5cf6)",
+                borderRadius: 999,
+                transition: "width .3s ease"
+              }} />
+            </div>
+            <div style={{
+              fontSize: '0.75rem',
+              color: '#9ca3af',
+              marginTop: '0.25rem',
+              textAlign: 'right'
+            }}>
+              {progress}%
+            </div>
+          </div>
+        )}
+
+        {/* Configuration Row - Collapsible on mobile */}
+        <details open={showConfig} onToggle={(e: any) => setShowConfig(e.target.open)} style={{ marginBottom: '1rem' }}>
           <summary style={{ 
             cursor: 'pointer', 
             fontWeight: '600', 
             fontSize: '0.9rem',
             color: '#6b7280',
-            marginBottom: '0.75rem',
+            marginBottom: showConfig ? '0.75rem' : '0',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
-            listStylePosition: 'inside'
+            listStylePosition: 'inside',
+            WebkitTapHighlightColor: 'transparent'
           }}>
             ⚙️ Configuration
           </summary>
@@ -351,6 +387,7 @@ export default function Page() {
               onChange={e => setBudget(Number(e.target.value))}
               disabled={busy}
               style={{ width: '100%' }}
+              placeholder="Search budget"
             />
           </div>
         </details>
@@ -359,7 +396,7 @@ export default function Page() {
           e.preventDefault();
           sendMessage(inputValue);
         }}>
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ flex: 1 }}>
               <textarea
                 value={inputValue}
@@ -368,19 +405,20 @@ export default function Page() {
                 rows={3}
                 disabled={busy}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
                     e.preventDefault();
                     sendMessage(inputValue);
                   }
                 }}
-                style={{ width: '100%' }}
+                style={{ width: '100%', resize: 'vertical' }}
               />
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
                 gap: '0.75rem', 
                 marginTop: '0.5rem',
-                fontSize: '0.875rem'
+                fontSize: '0.875rem',
+                flexWrap: 'wrap'
               }}>
                 <label style={{ 
                   display: 'flex', 
@@ -388,12 +426,14 @@ export default function Page() {
                   gap: '0.5rem',
                   cursor: 'pointer',
                   fontWeight: '600',
-                  color: researchMode ? '#6366f1' : '#6b7280'
+                  color: researchMode ? '#6366f1' : '#6b7280',
+                  WebkitTapHighlightColor: 'transparent'
                 }}>
                   <input
                     type="checkbox"
                     checked={researchMode}
                     onChange={(e) => setResearchMode(e.target.checked)}
+                    disabled={busy}
                     style={{
                       width: '18px',
                       height: '18px',
@@ -406,7 +446,7 @@ export default function Page() {
                   </span>
                 </label>
                 <span style={{ color: '#9ca3af', fontSize: '0.8rem' }}>
-                  {researchMode ? 'Deep web search & analysis' : 'Quick AI responses with context'}
+                  {researchMode ? 'Deep web search & analysis' : 'Quick AI responses'}
                 </span>
               </div>
             </div>
@@ -414,15 +454,15 @@ export default function Page() {
               type="submit" 
               disabled={busy || !inputValue.trim()}
               style={{ 
-                height: 'fit-content',
-                minWidth: '120px'
+                height: 'auto',
+                width: '100%'
               }}
             >
               {busy ? (researchMode ? "Researching..." : "Thinking...") : (researchMode ? "Research" : "Send")}
             </button>
           </div>
           <small style={{ color: 'var(--muted)', marginTop: '0.5rem', display: 'block' }}>
-            Press Enter to send, Shift+Enter for new line • Toggle research mode for deep analysis
+            Press Enter to send, Shift+Enter for new line
           </small>
         </form>
       </div>
@@ -431,7 +471,12 @@ export default function Page() {
       {logs.length > 0 && (
         <div className="card" style={{ marginTop: '1.5rem' }}>
           <details>
-            <summary style={{ cursor: 'pointer', fontWeight: '600', fontSize: '1.1rem' }}>
+            <summary style={{ 
+              cursor: 'pointer', 
+              fontWeight: '600', 
+              fontSize: '1.1rem',
+              WebkitTapHighlightColor: 'transparent'
+            }}>
               📋 Execution Logs ({logs.length})
             </summary>
             <div style={{ marginTop: '1rem' }}>

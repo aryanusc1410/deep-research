@@ -15,6 +15,13 @@ class Settings(BaseSettings):
     MAX_SEARCHES: int = 12
     USE_DUAL_SEARCH: bool = True
 
+    GEMINI_MAX_OUTPUT_TOKENS: int = 2048 
+    GEMINI_TIMEOUT_SECONDS: int = 30 
+    GEMINI_REQUEST_TIMEOUT: int = 45
+    GEMINI_MAX_RETRIES: int = 1
+
+    GEMINI_MAX_SEARCHES: int = 6
+
     # pydantic-settings config
     model_config = SettingsConfigDict(
         env_file=".env",

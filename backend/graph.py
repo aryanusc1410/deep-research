@@ -1,7 +1,7 @@
 # backend/graph.py
 from typing import Dict, Any, List
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from templates import REPORT_TEMPLATES
@@ -22,32 +22,81 @@ def initial_state(query: str, config: Dict[str, Any], messages: list):
     }
 
 def get_llm(provider: str, model: str | None):
+    """Get LLM with appropriate configuration and limits"""
     print(f"[LLM] Loading model from provider={provider}, model={model}")
+    
     if provider == "gemini":
+        # Apply strict limits for Gemini to prevent exceeding quota
         return ChatGoogleGenerativeAI(
-            model=model or "gemini-2.5-flash",
+            model=model or "gemini-2.0-flash-exp",  # Use flash model by default (faster, cheaper)
             google_api_key=settings.GOOGLE_API_KEY,
-            temperature=0.2
+            temperature=0.2,
+            max_output_tokens=settings.GEMINI_MAX_OUTPUT_TOKENS,  # Limit output tokens
+            max_retries=settings.GEMINI_MAX_RETRIES,  # Reduce retries
+            timeout=settings.GEMINI_TIMEOUT_SECONDS,  # Set timeout
+            request_timeout=settings.GEMINI_REQUEST_TIMEOUT,  # Overall timeout
         )
+    
+    # OpenAI - NO LIMITS, let it run normally
     return ChatOpenAI(
         model=model or settings.MODEL,
         api_key=settings.OPENAI_API_KEY,
         temperature=0.2
     )
 
+def invoke_llm_safe(llm, messages, is_gemini: bool = False, timeout_seconds: int = None):
+    """
+    Invoke LLM with timeout protection ONLY for Gemini.
+    OpenAI runs normally without timeout restrictions.
+    """
+    # If NOT Gemini, just invoke normally without any timeout wrapper
+    if not is_gemini:
+        return llm.invoke(messages)
+    
+    # For Gemini, apply timeout protection
+    if timeout_seconds is None:
+        timeout_seconds = settings.GEMINI_TIMEOUT_SECONDS
+    
+    try:
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(llm.invoke, messages)
+            try:
+                return future.result(timeout=timeout_seconds)
+            except TimeoutError:
+                print(f"[LLM] Gemini request timed out after {timeout_seconds}s")
+                raise TimeoutError(f"Gemini request exceeded {timeout_seconds}s timeout")
+    except Exception as e:
+        print(f"[LLM] Error during Gemini invocation: {e}")
+        raise
+
 def step_plan(state: Dict[str, Any]) -> Dict[str, Any]:
     print("[Graph] PLAN - Starting planning phase...")
     llm = get_llm(state["config"]["provider"], state["config"].get("model"))
     
-    # Adjust query count based on template
+    # Adjust query count based on template and provider
     is_detailed = state["config"]["template"] == "detailed_report"
-    query_count = "8-12" if is_detailed else "3-6"
+    is_gemini = state["config"]["provider"] == "gemini"
     
-    system = f"You are a research planner. Break the user query into {query_count} specific web searches. Return numbered queries only."
+    # Use fewer searches for Gemini to conserve quota
+    if is_gemini:
+        query_count = "4-6" if is_detailed else "3-4"
+    else:
+        query_count = "8-12" if is_detailed else "3-6"
+    
+    system = f"You are a research planner. Break the user query into {query_count} specific web searches. Return numbered queries only. Be concise."
     print("[Graph] PLAN - Invoking LLM...")
-    resp = llm.invoke([{"role":"system","content":system},{"role":"user","content":state["query"]}])
-    state["plan"] = resp.content
-    print(f"[Graph] PLAN - Complete. Generated {len(resp.content)} chars")
+    
+    try:
+        resp = invoke_llm_safe(llm, [
+            {"role":"system","content":system},
+            {"role":"user","content":state["query"]}
+        ], is_gemini=is_gemini)
+        state["plan"] = resp.content
+        print(f"[Graph] PLAN - Complete. Generated {len(resp.content)} chars")
+    except TimeoutError as e:
+        print(f"[Graph] PLAN - Timeout occurred, using fallback plan")
+        state["plan"] = f"1. {state['query']}\n2. {state['query']} overview\n3. {state['query']} details"
+    
     return state
 
 def run_search_with_tool(tool, queries: List[str], tool_name: str) -> List[Dict]:
@@ -69,7 +118,13 @@ def run_search_with_tool(tool, queries: List[str], tool_name: str) -> List[Dict]
 
 def step_search(state: Dict[str, Any]) -> Dict[str, Any]:
     print("[Graph] SEARCH - Starting search phase...")
-    budget = min(int(state["config"]["search_budget"]), settings.MAX_SEARCHES)
+    
+    # Apply stricter budget for Gemini ONLY
+    is_gemini = state["config"]["provider"] == "gemini"
+    max_budget = settings.GEMINI_MAX_SEARCHES if is_gemini else settings.MAX_SEARCHES
+    
+    budget = min(int(state["config"]["search_budget"]), max_budget)
+    print(f"[Graph] SEARCH - Using budget of {budget} queries (provider: {state['config']['provider']})")
     
     # Parse queries from plan
     raw_lines = [l for l in state["plan"].split("\n") if l.strip()]
@@ -125,7 +180,8 @@ def synthesize_single_report(
     query: str, 
     sources: List[Dict], 
     template: str,
-    source_filter: str = None
+    source_filter: str = None,
+    is_gemini: bool = False
 ) -> str:
     """Generate a single report from sources"""
     # Filter sources if needed
@@ -136,16 +192,33 @@ def synthesize_single_report(
     if not filtered_sources:
         return None
     
+    # Limit sources for Gemini ONLY to reduce token usage
+    if is_gemini and len(filtered_sources) > 10:
+        print(f"[Graph] SYNTHESIZE - Limiting sources from {len(filtered_sources)} to 10 for Gemini")
+        filtered_sources = filtered_sources[:10]
+    
     template_text = REPORT_TEMPLATES[template]
     src_text = "\n".join([
         f"[{s['id']}] {s['title']} — {s['url']} (from {s.get('source', 'unknown')})" 
         for s in filtered_sources
     ])
-    system = f"{template_text}\nOnly cite using the numeric indices from SOURCES."
+    
+    # Add conciseness instruction for Gemini ONLY
+    additional_instruction = "\nBe concise and focused. Prioritize quality over length." if is_gemini else ""
+    
+    system = f"{template_text}{additional_instruction}\nOnly cite using the numeric indices from SOURCES."
     user = f"QUERY:\n{query}\n\nSOURCES:\n{src_text}"
     
-    resp = llm.invoke([{"role":"system","content":system},{"role":"user","content":user}])
-    return resp.content
+    try:
+        # Use safe invoke that only applies timeout to Gemini
+        resp = invoke_llm_safe(llm, [
+            {"role":"system","content":system},
+            {"role":"user","content":user}
+        ], is_gemini=is_gemini)
+        return resp.content
+    except TimeoutError:
+        print("[Graph] SYNTHESIZE - Gemini timeout occurred during synthesis")
+        return f"Report generation timed out. Please try with fewer search queries or use OpenAI instead of Gemini."
 
 def step_synthesize(state: Dict[str, Any]) -> Dict[str, Any]:
     print("[Graph] SYNTHESIZE - Starting synthesis phase...")
@@ -153,6 +226,7 @@ def step_synthesize(state: Dict[str, Any]) -> Dict[str, Any]:
     template = state["config"]["template"]
     query = state["query"]
     sources = state["sources"]
+    is_gemini = state["config"]["provider"] == "gemini"
     
     # Check if we have dual search results
     has_tavily = any(s.get("source") == "Tavily" for s in sources)
@@ -165,19 +239,26 @@ def step_synthesize(state: Dict[str, Any]) -> Dict[str, Any]:
         # Generate two reports in parallel
         with ThreadPoolExecutor(max_workers=2) as executor:
             future_tavily = executor.submit(
-                synthesize_single_report, llm, query, sources, template, "Tavily"
+                synthesize_single_report, llm, query, sources, template, "Tavily", is_gemini
             )
             future_serp = executor.submit(
-                synthesize_single_report, llm, query, sources, template, "SerpAPI"
+                synthesize_single_report, llm, query, sources, template, "SerpAPI", is_gemini
             )
             
-            tavily_report = future_tavily.result()
-            serp_report = future_serp.result()
+            try:
+                # Only apply timeout to Gemini
+                timeout = settings.GEMINI_REQUEST_TIMEOUT if is_gemini else None
+                tavily_report = future_tavily.result(timeout=timeout)
+                serp_report = future_serp.result(timeout=timeout)
+            except TimeoutError:
+                print("[Graph] SYNTHESIZE - One or both reports timed out")
+                tavily_report = "Report timed out"
+                serp_report = "Report timed out"
         
         print(f"[Graph] SYNTHESIZE - Tavily report: {len(tavily_report) if tavily_report else 0} chars")
         print(f"[Graph] SYNTHESIZE - SerpAPI report: {len(serp_report) if serp_report else 0} chars")
         
-        # Ask LLM to choose the BETTER report
+        # Ask LLM to choose the BETTER report (with timeout protection only for Gemini)
         print("[Graph] SYNTHESIZE - Asking LLM to select the BEST report...")
         comparison_prompt = f"""You are a research quality evaluator. You have two research reports on the same topic from different search sources.
 
@@ -206,8 +287,12 @@ Respond with ONLY ONE of these exact phrases, nothing else:
 
 Your choice:"""
         
-        choice_resp = llm.invoke([{"role":"user","content":comparison_prompt}])
-        choice = choice_resp.content.strip().upper()
+        try:
+            choice_resp = invoke_llm_safe(llm, [{"role":"user","content":comparison_prompt}], is_gemini=is_gemini)
+            choice = choice_resp.content.strip().upper()
+        except TimeoutError:
+            print("[Graph] SYNTHESIZE - Comparison timed out, defaulting to Tavily")
+            choice = "TAVILY"
         
         print(f"[Graph] SYNTHESIZE - LLM chose: {choice}")
         
@@ -236,19 +321,41 @@ Your choice:"""
     else:
         # Single source synthesis
         print("[Graph] SYNTHESIZE - Generating single report...")
-        src_text = "\n".join([f"[{s['id']}] {s['title']} — {s['url']}" for s in sources])
+        
+        # Limit sources for Gemini ONLY
+        limited_sources = sources
+        if is_gemini and len(sources) > 10:
+            print(f"[Graph] SYNTHESIZE - Limiting sources from {len(sources)} to 10 for Gemini")
+            limited_sources = sources[:10]
+        
+        src_text = "\n".join([f"[{s['id']}] {s['title']} — {s['url']}" for s in limited_sources])
         template_text = REPORT_TEMPLATES[template]
-        system = f"{template_text}\nOnly cite using the numeric indices from SOURCES."
+        
+        # Add conciseness instruction for Gemini ONLY
+        additional_instruction = "\nBe concise and focused. Prioritize quality over length." if is_gemini else ""
+        system = f"{template_text}{additional_instruction}\nOnly cite using the numeric indices from SOURCES."
         user = f"QUERY:\n{query}\n\nSOURCES:\n{src_text}"
         
-        resp = llm.invoke([{"role":"system","content":system},{"role":"user","content":user}])
-        state["report"] = {
-            "structure": template,
-            "content": resp.content,
-            "citations": sources,
-            "dual_search": False
-        }
-        print(f"[Graph] SYNTHESIZE - Report: {len(resp.content)} chars")
+        try:
+            # Use safe invoke that only applies timeout to Gemini
+            resp = invoke_llm_safe(llm, [
+                {"role":"system","content":system},
+                {"role":"user","content":user}
+            ], is_gemini=is_gemini)
+            state["report"] = {
+                "structure": template,
+                "content": resp.content,
+                "citations": limited_sources,
+                "dual_search": False
+            }
+            print(f"[Graph] SYNTHESIZE - Report: {len(resp.content)} chars")
+        except TimeoutError:
+            state["report"] = {
+                "structure": template,
+                "content": "Report generation timed out. Please try with fewer search queries or use OpenAI instead of Gemini.",
+                "citations": limited_sources,
+                "dual_search": False
+            }
     
     print("[Graph] SYNTHESIZE - Complete")
     return state
