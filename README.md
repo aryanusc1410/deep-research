@@ -59,6 +59,8 @@ NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 
 ```bash
 # From project root
+docker build -f backend/Dockerfile -t deep-research-backend .
+docker build -f frontend/Dockerfile -t deep-research-frontend .
 docker-compose up
 ```
 
