@@ -6,18 +6,19 @@ An intelligent research assistant powered by **LangGraph** that performs paralle
 
 ## Key Features
 
+- **Model Selection**: Choose between OpenAI or Gemini LLMs (Defaults to OpenAI)
 - **Dual Search Architecture**: Runs Tavily + SerpAPI in parallel, LLM selects best report
 - **Chat + Research Modes**: Toggle between deep research and quick Q&A
 - **Multiple Report Formats**: Bullet summaries, tables, or detailed academic reports
 - **Real-Time Streaming**: Live progress updates via Server-Sent Events
 - **Source Citations**: Every claim backed by verifiable references
 
-## Quick Setup (5 Minutes)
+## Quick Setup
 
 ### Prerequisites
 
 - Python 3.11+ and Node.js 18+
-- API Keys: [OpenAI](https://platform.openai.com/api-keys) + [Tavily](https://tavily.com) (required), [SerpAPI](https://serpapi.com) (optional)
+- API Keys: [OpenAI](https://platform.openai.com/api-keys) + [Tavily](https://tavily.com) (required), [SerpAPI](https://serpapi.com) (optional) + [Gemini](https://www.google.com/aclk?sa=L&ai=DChsSEwiWnZbvx8GQAxVhJ0QIHWvoArIYACICCAEQABoCZHo&ae=2&co=1&ase=2&gclid=CjwKCAjwjffHBhBuEiwAKMb8pN7kTxPxi3EM-QBHHWEQaAFI-yKTcmr60MSdlMDZcnGpKYD5T_UXQhoC-0MQAvD_BwE&ei=L-v9aJvcGtLAkPIP2_Gp8Q0&cid=CAASlwHkaK9ycQqNyIDF76RK4HstumkfN4RjBSlmb9GbujOyu1se1xjmT1L5WMOI1omD9ZZkBLBZKV29hquWEu6J5mdeZsN1AbX39M_SED2ny0nZXpoKFgrHEdLey66XyVlFnlj8jiF398KGoo7EYGfB3D3ZDuWO7zNpROHapd2lpE8LrgNbfSllSOvMS8w0QkresIeWimsPIJd3&cce=2&category=acrcp_v1_71&sig=AOD64_3aFI6UHXFnMvX350wsXDCj5Ymzyw&q&sqi=2&nis=4&adurl&ved=2ahUKEwjbr5Lvx8GQAxVSIEQIHdt4Kt4Q0Qx6BAgMEAE) (optional)
 
 ### 1. Clone & Install
 
@@ -119,6 +120,7 @@ npm run dev
 ## Structure
 
 ```
+assets/
 backend/     # FastAPI + LangGraph workflows
 frontend/    # Next.js + React UI
 ├── app/     # Pages and routing
