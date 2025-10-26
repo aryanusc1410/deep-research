@@ -8,8 +8,22 @@ REPORT_TEMPLATES: Dict[str, str] = {
         "Strictly obey the structure and headings."
     ),
     "two_column": (
-        "Produce a table with two columns: Claim | Evidence. 6–12 rows. "
-        "Each row is a single claim grounded by one or more sources with bracketed cites."
+        "You are a research analyst. Create a markdown table with EXACTLY two columns: Claim | Evidence.\n\n"
+        "CRITICAL REQUIREMENTS:\n"
+        "1. Output ONLY the table - no introduction, no conclusion, no extra text\n"
+        "2. First row must be: | Claim | Evidence |\n"
+        "3. Second row must be separator: |-------|----------|\n"
+        "4. Each following row: | specific claim | evidence with citations [1], [2] |\n"
+        "5. Create 6-12 rows total\n"
+        "6. Each claim must be concise (1-2 sentences)\n"
+        "7. Each evidence must have at least one citation [X]\n"
+        "8. Use proper markdown table format with pipes (|)\n\n"
+        "Example format:\n"
+        "| Claim | Evidence |\n"
+        "|-------|----------|\n"
+        "| First claim here | Supporting evidence with source [1] |\n"
+        "| Second claim here | More evidence from [2] and [3] |\n\n"
+        "DO NOT include any text before or after the table."
     ),
     "detailed_report": (
         "You are an expert research analyst writing a comprehensive, detailed research report.\n\n"

@@ -47,6 +47,23 @@ async def run(req: RunRequest, request: Request):
 
     async def event_generator() -> AsyncGenerator[str, None]:
         try:
+            # Validate provider availability and get actual provider
+            try:
+                actual_provider = settings.get_available_provider(state["config"]["provider"])
+                if actual_provider != state["config"]["provider"]:
+                    yield _sse("log", {"msg": f"⚠️  Gemini API key not found, using OpenAI instead"})
+                    state["config"]["provider"] = actual_provider
+            except ValueError as e:
+                yield _sse("error", {"message": str(e)})
+                return
+            
+            # Validate search requirements
+            try:
+                settings.validate_search_requirements()
+            except ValueError as e:
+                yield _sse("error", {"message": str(e)})
+                return
+
             # PLAN
             print("→ Sending planning status...")
             yield _sse("status", {"phase":"planning"})
@@ -98,10 +115,14 @@ async def run(req: RunRequest, request: Request):
             yield _sse("progress", {"percent": 100})
             print("🏁 Done.")
 
+        except ValueError as e:
+            # Validation errors (missing API keys, etc.)
+            print(f"❌ Validation error: {e}")
+            yield _sse("error", {"message": str(e)})
         except Exception as e:
             print(f"❌ Error in event_generator: {e}")
             traceback.print_exc()
-            yield _sse("error", {"message": str(e)})
+            yield _sse("error", {"message": f"An error occurred: {str(e)}"})
 
     return StreamingResponse(
         event_generator(),
@@ -116,12 +137,40 @@ async def run(req: RunRequest, request: Request):
 # JSON fallback (no streaming) — handy for quick checks
 @app.post("/run_sync")
 async def run_sync(req: RunRequest):
-    memory.extend([m.model_dump() for m in req.messages])
-    state = initial_state(req.query, req.config.model_dump(), memory.as_messages())
-    s1 = step_plan(state)
-    s2 = step_search(s1)
-    s3 = step_synthesize(s2)
-    return JSONResponse(content={"report": s3["report"], "plan": s1["plan"], "sources": s2["sources"]})
+    try:
+        # Validate and get actual provider
+        actual_provider = settings.get_available_provider(req.config.provider)
+        if actual_provider != req.config.provider:
+            print(f"⚠️  Provider fallback: {req.config.provider} → {actual_provider}")
+        
+        # Validate search
+        settings.validate_search_requirements()
+        
+        memory.extend([m.model_dump() for m in req.messages])
+        state = initial_state(req.query, req.config.model_dump(), memory.as_messages())
+        state["config"]["provider"] = actual_provider
+        
+        s1 = step_plan(state)
+        s2 = step_search(s1)
+        s3 = step_synthesize(s2)
+        
+        return JSONResponse(content={
+            "report": s3["report"], 
+            "plan": s1["plan"], 
+            "sources": s2["sources"],
+            "actual_provider": actual_provider
+        })
+    except ValueError as e:
+        return JSONResponse(
+            content={"error": str(e)},
+            status_code=400
+        )
+    except Exception as e:
+        traceback.print_exc()
+        return JSONResponse(
+            content={"error": str(e)},
+            status_code=500
+        )
 
 # Chat endpoint for non-research questions
 @app.post("/chat")
@@ -134,7 +183,12 @@ async def chat(req: RunRequest):
     memory.extend([m.model_dump() for m in req.messages])
     
     try:
-        llm = get_llm(req.config.provider, req.config.model)
+        # Validate and get actual provider with fallback
+        actual_provider = settings.get_available_provider(req.config.provider)
+        if actual_provider != req.config.provider:
+            print(f"⚠️  Chat provider fallback: {req.config.provider} → {actual_provider}")
+        
+        llm = get_llm(actual_provider, req.config.model)
         
         # Build conversation context
         messages = []
@@ -149,8 +203,15 @@ async def chat(req: RunRequest):
         
         return JSONResponse(content={
             "response": response.content,
-            "mode": "chat"
+            "mode": "chat",
+            "actual_provider": actual_provider
         })
+    except ValueError as e:
+        print(f"❌ Chat validation error: {e}")
+        return JSONResponse(
+            content={"error": str(e)},
+            status_code=400
+        )
     except Exception as e:
         print(f"❌ Chat error: {e}")
         traceback.print_exc()
