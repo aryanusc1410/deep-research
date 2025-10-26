@@ -1,16 +1,18 @@
-# 🔬 Deep Research Agent
+# Deep Research Agent
 
-An intelligent research assistant powered by **LangGraph** that performs parallel web searches, evaluates multiple sources, and generates comprehensive reports with citations. Features dual-mode interaction (research vs chat), real-time streaming, and competitive search evaluation.
+An intelligent research assistant powered by **LangGraph** that performs parallel web searches, evaluates multiple sources, and generates comprehensive reports with citations. Features dual-mode interaction (research vs chat), real-time streaming, and competitive search evaluation. A Project by Aryan Shah.
 
-## ✨ Key Features
+(P.S I have used my university GitHub Account because this is the account associated with the email I used to communicate with the team. Feel free to also checkout my personal projects at my [Personal GitHub](https://github.com/aryan1410) and my [Portfolio](https://www.aryanshah1410.com))
 
-- **🎯 Dual Search Architecture**: Runs Tavily + SerpAPI in parallel, LLM selects best report
-- **💬 Chat + Research Modes**: Toggle between deep research and quick Q&A
-- **📊 Multiple Report Formats**: Bullet summaries, tables, or detailed academic reports
-- **⚡ Real-Time Streaming**: Live progress updates via Server-Sent Events
-- **🔗 Source Citations**: Every claim backed by verifiable references
+## Key Features
 
-## 🚀 Quick Setup (5 Minutes)
+- **Dual Search Architecture**: Runs Tavily + SerpAPI in parallel, LLM selects best report
+- **Chat + Research Modes**: Toggle between deep research and quick Q&A
+- **Multiple Report Formats**: Bullet summaries, tables, or detailed academic reports
+- **Real-Time Streaming**: Live progress updates via Server-Sent Events
+- **Source Citations**: Every claim backed by verifiable references
+
+## Quick Setup (5 Minutes)
 
 ### Prerequisites
 
@@ -80,26 +82,30 @@ npm run dev
 
 **Open:** http://localhost:3000
 
-## 📖 Usage
+## Usage
+
+![Display](assets/usage_guide.png)
 
 1. **Research Mode** (toggle ON): Enter query → Get sourced report with citations
-2. **Chat Mode** (toggle OFF): Ask follow-ups without triggering new research
+2. **Normal Mode** (toggle OFF): Ask follow-ups without triggering new research
 3. **Detailed Reports**: Select "Detailed report (long)" for 1500+ word analysis
+4. **Model Selection**: Select between OpenAI or Gemini LLMs (Gemini is limited in search power due to free tier API)
+5. **Number of Query Searches**: Configure number of searches as per level of detail required (configurable for OpenAI, hard coded for Gemini)
 
-## 🏗️ Tech Stack
+## Tech Stack
 
 **Backend:** FastAPI, LangGraph, LangChain, OpenAI, Tavily/SerpAPI  
 **Frontend:** Next.js, React, TypeScript, SSE streaming  
 **Key Pattern:** Stateful workflows with parallel search + LLM evaluation
 
-## 🎯 What Makes It Different
+## What Makes It Different
 
 1. **Competitive Evaluation**: Generates 2 complete reports from different engines, LLM picks winner
 2. **Stateful Orchestration**: LangGraph manages explicit state transitions (not just prompt chaining)
 3. **Hybrid Modes**: Seamlessly switch between research and chat without losing context
 4. **Production SSE**: Proper streaming with backpressure handling and error recovery
 
-## 📁 Structure
+## Structure
 
 ```
 backend/     # FastAPI + LangGraph workflows
@@ -108,7 +114,7 @@ frontend/    # Next.js + React UI
 └── components/  # Report, Log components
 ```
 
-## 🐛 Common Issues
+## Common Issues
 
 - **Port conflicts**: Kill processes on 8000/3000
 - **Missing API keys**: Check `.env` files exist and have valid keys
