@@ -13,6 +13,7 @@ An intelligent research assistant powered by **LangGraph** that performs paralle
 ## 🚀 Quick Setup (5 Minutes)
 
 ### Prerequisites
+
 - Python 3.11+ and Node.js 18+
 - API Keys: [OpenAI](https://platform.openai.com/api-keys) + [Tavily](https://tavily.com) (required), [SerpAPI](https://serpapi.com) (optional)
 
@@ -30,11 +31,13 @@ pip install -r requirements.txt
 # Frontend (new terminal)
 cd frontend
 npm install
+cd .. #Back to root
 ```
 
 ### 2. Configure Environment
 
 **`backend/.env`:**
+
 ```env
 OPENAI_API_KEY=sk-...
 TAVILY_API_KEY=tvly-...
@@ -43,19 +46,33 @@ USE_DUAL_SEARCH=true
 ```
 
 **`frontend/.env.local`:**
+
 ```env
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 ```
 
-### 3. Run
+### 3. Run Application
+
+#### Option A: Using Docker
+
+```bash
+# From project root
+docker-compose up
+```
+
+**Open:** http://localhost:3000
+
+#### Option B: Manual (Two Terminals)
 
 **Terminal 1 (Backend):**
+
 ```bash
 cd backend
 uvicorn app:app --reload
 ```
 
 **Terminal 2 (Frontend):**
+
 ```bash
 cd frontend
 npm run dev

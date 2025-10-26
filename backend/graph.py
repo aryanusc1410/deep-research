@@ -25,7 +25,7 @@ def get_llm(provider: str, model: str | None):
     print(f"[LLM] Loading model from provider={provider}, model={model}")
     if provider == "gemini":
         return ChatGoogleGenerativeAI(
-            model=model or "gemini-1.5-flash-latest",
+            model=model or "gemini-2.5-flash",
             google_api_key=settings.GOOGLE_API_KEY,
             temperature=0.2
         )

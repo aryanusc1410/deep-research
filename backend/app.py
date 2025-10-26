@@ -1,5 +1,6 @@
 # backend/app.py
 import json
+import traceback
 import asyncio
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,7 +9,7 @@ from typing import AsyncGenerator
 from fastapi.responses import JSONResponse
 
 from schemas import RunRequest
-from graph import initial_state, step_plan, step_search, step_synthesize
+from graph import get_llm, initial_state, step_plan, step_search, step_synthesize
 from memory import RollingBuffer
 from settings import settings
 
@@ -99,7 +100,6 @@ async def run(req: RunRequest, request: Request):
 
         except Exception as e:
             print(f"❌ Error in event_generator: {e}")
-            import traceback
             traceback.print_exc()
             yield _sse("error", {"message": str(e)})
 
@@ -134,7 +134,6 @@ async def chat(req: RunRequest):
     memory.extend([m.model_dump() for m in req.messages])
     
     try:
-        from graph import get_llm
         llm = get_llm(req.config.provider, req.config.model)
         
         # Build conversation context
@@ -154,7 +153,6 @@ async def chat(req: RunRequest):
         })
     except Exception as e:
         print(f"❌ Chat error: {e}")
-        import traceback
         traceback.print_exc()
         return JSONResponse(
             content={"error": str(e)},
