@@ -45,6 +45,15 @@ OPENAI_API_KEY=sk-...
 TAVILY_API_KEY=tvly-...
 SERP_API_KEY=...           # Optional
 USE_DUAL_SEARCH=true
+MODEL=gpt-4o-mini
+MAX_MESSAGES=12
+MAX_SEARCHES=12
+USE_DUAL_SEARCH=true
+GEMINI_MAX_OUTPUT_TOKENS=2048
+GEMINI_TIMEOUT_SECONDS=30
+GEMINI_REQUEST_TIMEOUT=45
+GEMINI_MAX_RETRIES=1
+GEMINI_MAX_SEARCHES=4
 ```
 
 **`frontend/.env.local`:**
@@ -92,7 +101,7 @@ npm run dev
 2. **Normal Mode** (toggle OFF): Ask follow-ups without triggering new research
 3. **Detailed Reports**: Select "Detailed report (long)" for 1500+ word analysis
 4. **Model Selection**: Select between OpenAI or Gemini LLMs (Gemini is limited in search power due to free tier API)
-5. **Number of Query Searches**: Configure number of searches as per level of detail required (configurable for OpenAI, hard coded for Gemini)
+5. **Number of Query Searches**: Configure number of searches as per level of detail required
 
 ## Tech Stack
 

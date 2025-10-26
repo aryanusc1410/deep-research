@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     GEMINI_REQUEST_TIMEOUT: int = 45
     GEMINI_MAX_RETRIES: int = 1
 
-    GEMINI_MAX_SEARCHES: int = 6
+    GEMINI_MAX_SEARCHES: int = 4
 
     # pydantic-settings config
     model_config = SettingsConfigDict(

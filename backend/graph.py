@@ -26,18 +26,16 @@ def get_llm(provider: str, model: str | None):
     print(f"[LLM] Loading model from provider={provider}, model={model}")
     
     if provider == "gemini":
-        # Apply strict limits for Gemini to prevent exceeding quota
         return ChatGoogleGenerativeAI(
-            model=model or "gemini-2.0-flash-exp",  # Use flash model by default (faster, cheaper)
+            model=model or "gemini-2.0-flash-exp",
             google_api_key=settings.GOOGLE_API_KEY,
             temperature=0.2,
-            max_output_tokens=settings.GEMINI_MAX_OUTPUT_TOKENS,  # Limit output tokens
-            max_retries=settings.GEMINI_MAX_RETRIES,  # Reduce retries
-            timeout=settings.GEMINI_TIMEOUT_SECONDS,  # Set timeout
-            request_timeout=settings.GEMINI_REQUEST_TIMEOUT,  # Overall timeout
+            max_output_tokens=settings.GEMINI_MAX_OUTPUT_TOKENS,
+            max_retries=settings.GEMINI_MAX_RETRIES,
+            timeout=settings.GEMINI_TIMEOUT_SECONDS,
+            request_timeout=settings.GEMINI_REQUEST_TIMEOUT,
         )
     
-    # OpenAI - NO LIMITS, let it run normally
     return ChatOpenAI(
         model=model or settings.MODEL,
         api_key=settings.OPENAI_API_KEY,
