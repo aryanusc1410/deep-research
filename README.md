@@ -19,12 +19,12 @@ An intelligent research assistant powered by **LangGraph** that performs paralle
 ### 1. Clone & Install
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/aryanusc1410/deep-research.git
 cd deep-research
 
 # Backend
-python -m venv research_agent
-source research_agent/bin/activate  # Windows: research_agent\Scripts\activate
+python -m venv research-agent
+source research-agent/bin/activate  # Windows: research-agent\Scripts\activate
 pip install -r requirements.txt
 
 # Frontend (new terminal)
