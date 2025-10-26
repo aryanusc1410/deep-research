@@ -47,7 +47,7 @@ def get_llm(provider: str, model: str | None):
     if actual_provider == "gemini":
         return ChatGoogleGenerativeAI(
             model=model or "gemini-2.0-flash-exp",
-            google_api_key=settings.GOOGLE_API_KEY,
+            google_api_key=settings.GEMINI_API_KEY,
             temperature=0.2,
             max_output_tokens=settings.GEMINI_MAX_OUTPUT_TOKENS,
             max_retries=settings.GEMINI_MAX_RETRIES,
