@@ -32,6 +32,7 @@ def _sse(event: str, data: dict) -> str:
 
 @app.post("/run")
 async def run(req: RunRequest, request: Request):
+    """Main orchestrator function - handles planning, searching, synthesizing with streaming responses"""
     print("\n🚀 /run endpoint called")
     print("Origin:", request.headers.get("origin"))
     print(f"Query: {req.query}")
@@ -137,6 +138,7 @@ async def run(req: RunRequest, request: Request):
 # JSON fallback (no streaming) — handy for quick checks
 @app.post("/run_sync")
 async def run_sync(req: RunRequest):
+    """Synchronous version of /run endpoint - returns full response at once"""
     try:
         # Validate and get actual provider
         actual_provider = settings.get_available_provider(req.config.provider)

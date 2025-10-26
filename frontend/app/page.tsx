@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import Report from "@/components/Report";
 import Log from "@/components/Log";
+import FormattedText from "@/components/FormattedText";
 
 type Phase = "" | "planning" | "searching" | "synthesizing" | "done" | "error";
 
@@ -288,7 +289,7 @@ export default function Page() {
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word'
                   }}>
-                    {msg.content}
+                    <FormattedText content={msg.content} />
                   </div>
                 )}
               </div>
