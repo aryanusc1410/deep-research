@@ -95,7 +95,7 @@ npm run dev
 
 **Backend:** FastAPI, LangGraph, LangChain, OpenAI, Tavily/SerpAPI  
 **Frontend:** Next.js, React, TypeScript, SSE streaming  
-**Deployment:** Backend and frontend deployed as independent modules on Render - with CORS integration (Since it is a free tier deployment please bear with app loading times)
+**Deployment:** Backend and frontend deployed as independent modules on Render - with CORS integration (Since it is a free tier deployment please bear with app loading times)  
 **Key Pattern:** Stateful workflows with parallel search + LLM evaluation
 
 ## Structure
