@@ -6,12 +6,15 @@
  */
 
 import "../styles/globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
   title: "Deep Research Agent",
-  description: "LangGraph-powered research assistant with real-time streaming",
-  viewport: "width=device-width, initial-scale=1",
+  description: "LangGraph-powered research assistant with real-time streaming", 
+};
+export const viewport: Viewport = {
+  width:'device-width', 
+  initialScale:1,
 };
 
 /**
