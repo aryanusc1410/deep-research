@@ -1,11 +1,30 @@
-import "../styles/globals.css";
+/**
+ * Root Layout Component
+ * 
+ * Provides the base HTML structure and global styling for the application.
+ * This layout wraps all pages in the application.
+ */
 
-export const metadata = {
-  title: "Deep Research",
-  description: "LangGraph-based research agent",
+import "../styles/globals.css";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Deep Research Agent",
+  description: "LangGraph-powered research assistant with real-time streaming",
+  viewport: "width=device-width, initial-scale=1",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+/**
+ * Root layout component
+ * 
+ * @param children - Child components to render
+ * @returns Root HTML structure
+ */
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body>{children}</body>

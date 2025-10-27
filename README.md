@@ -125,6 +125,7 @@ backend/     # FastAPI + LangGraph workflows
 frontend/    # Next.js + React UI
 ├── app/     # Pages and routing
 └── components/  # Report, Log components
+└── styles/ #global css file for styling components
 ```
 
 ## Common Issues

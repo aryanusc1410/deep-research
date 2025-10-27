@@ -1,10 +1,14 @@
 {
   "name": "deep-research-ui",
+  "version": "1.0.0",
+  "description": "Frontend for Deep Research Agent - React/Next.js interface with real-time streaming",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "next start -p 3000"
+    "start": "next start -p 3000",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "dotenv": "16.4.5",
@@ -16,5 +20,9 @@
   "devDependencies": {
     "@types/node": "24.9.1",
     "@types/react": "19.2.2"
+  },
+  "engines": {
+    "node": ">=18.17.0",
+    "npm": ">=9.0.0"
   }
 }
