@@ -14,7 +14,8 @@ from typing import Final
 # CORS Settings
 ALLOWED_ORIGINS: Final[list[str]] = [
     "http://localhost:3000",
-    "http://127.0.0.1:3000"
+    "http://127.0.0.1:3000",
+    "https://magnificent-contentment-production.up.railway.app"
 ]
 ALLOWED_ORIGIN_REGEX: Final[str] = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
 
