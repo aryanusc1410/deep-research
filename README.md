@@ -1,6 +1,6 @@
 # Deep Research Agent
 
-An intelligent research assistant powered by **LangGraph** that performs parallel web searches, evaluates multiple sources, and generates comprehensive reports with citations. Features dual-mode interaction (research vs chat), real-time streaming, and competitive search evaluation. A Project by Aryan Shah.
+An intelligent research assistant powered by **LangGraph** that performs parallel web searches, evaluates multiple sources, and generates comprehensive reports with citations. Features dual-mode interaction (research vs chat), real-time streaming, and competitive search evaluation. A Project by Aryan Shah. Check it out [here](https://deep-research-33lv.onrender.com)
 
 (P.S I have used my university GitHub Account because this is the account associated with the email I used to communicate with the team. Feel free to also checkout my personal projects at my [Personal GitHub](https://github.com/aryan1410) and my [Portfolio](https://www.aryanshah1410.com))
 
@@ -63,20 +63,7 @@ GEMINI_MAX_SEARCHES=4
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 ```
 
-### 3. Run Application
-
-#### Option A: Using Docker
-
-```bash
-# From project root
-docker build -f backend/Dockerfile -t deep-research-backend .
-docker build -f frontend/Dockerfile -t deep-research-frontend .
-docker-compose up
-```
-
-**Open:** http://localhost:3000
-
-#### Option B: Manual (Two Terminals)
+### 3. Run Application: (Two Terminals)
 
 **Terminal 1 (Backend):**
 
@@ -108,14 +95,8 @@ npm run dev
 
 **Backend:** FastAPI, LangGraph, LangChain, OpenAI, Tavily/SerpAPI  
 **Frontend:** Next.js, React, TypeScript, SSE streaming  
+**Deployment** Backend and frontend deployed as independent modules on Render - with CORS integration (Since it is a free tier deployment please bear with app loading times)
 **Key Pattern:** Stateful workflows with parallel search + LLM evaluation
-
-## What Makes It Different
-
-1. **Competitive Evaluation**: Generates 2 complete reports from different engines, LLM picks winner
-2. **Stateful Orchestration**: LangGraph manages explicit state transitions (not just prompt chaining)
-3. **Hybrid Modes**: Seamlessly switch between research and chat without losing context
-4. **Production SSE**: Proper streaming with backpressure handling and error recovery
 
 ## Structure
 
@@ -127,6 +108,13 @@ frontend/    # Next.js + React UI
 └── components/  # Report, Log components
 └── styles/ #global css file for styling components
 ```
+
+## What Makes It Different
+
+1. **Competitive Evaluation**: Generates 2 complete reports from different engines, LLM picks winner
+2. **Stateful Orchestration**: LangGraph manages explicit state transitions (not just prompt chaining)
+3. **Hybrid Modes**: Seamlessly switch between research and chat without losing context
+4. **Production SSE**: Proper streaming with backpressure handling and error recovery
 
 ## Common Issues
 
